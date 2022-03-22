@@ -1,41 +1,40 @@
 <?php
 header('Access-Control-Allow-Origin: *');
-include 'autoload.php';
-include 'mvc/models/mutil.php';
-include 'mvc/models/mbd.php';
+include 'init.php';
 
 $app = new Aplicacao;
+$reuter = new Reuter;
+
+if ($reuter->hasRoutes()) {
+	include $reuter->resourceRoutes;
+}
+
+if (!$reuter->hasController()) {
+	$app->response(400,  'Controlador[c' . $app->rotasol.'] não encontrado');
+}
 
 // Middewares
-// Autenticação
 
-// Adicionando rotas
-include 'routes/all.php';
-
-$app->setRota();
-
-if (!isSet($app->rota)) {
-	$infoRota = $app->hide400 ? '' : 'Rota não encontrada';
-	$app->response(400, $infoRota);
+if (!$reuter->setRota()) {
+	$app->response(400, 'Rota não encontrada');
 }
 
-if (!file_exists('mvc/controls/c' . $app->rotasol . '.php')) {
-	$infoControl = $app->hide400 ? '' : 'Controlador[c' . $app->rotasol.'] não encontrado';
-	$app->response(400,  $infoControl);
+include $reuter->resourceController;
+
+if (!function_exists($reuter->rota->funcao)) {
+	$app->response(400, 'Funcao['.$reuter->rota->funcao.'] inexistente no controlador');
 }
 
-include 'mvc/controls/c' . $app->rotasol . '.php';
-
-if (!function_exists($app->rota->funcao)) {
-	$infoFuncao = $app->hide400 ? '' : 'Funcao['.$app->rota->funcao.'] inexistente no controlador';
-	$app->response(400, $infoFuncao);
+$get = clone $app->get;
+foreach($reuter->get AS $var => $value){
+	$get->$var = $value;
 }
 
 $prepare = new stdClass;
-$prepare->get = $app->get;
+$prepare->get = $get;
 $prepare->post = $app->post;
 $prepare->body = $app->body;
 
-call_user_func($app->rota->funcao, $prepare);
+call_user_func($reuter->rota->funcao, $prepare);
 
 ?>

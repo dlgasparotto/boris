@@ -19,6 +19,7 @@ Class Filme {
 		}
 
 		$sql = "select * from filmes $filtros";
+
 		$rs = $this->db->query($sql);
 		$result = array();
 		while ($filme = $rs->fetchObject()){

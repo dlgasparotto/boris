@@ -3,11 +3,11 @@ header('Content-Type: application/json');
 
 // ---------------------------------------------
 
-function listFilme($app){
 
+function listFilme($app){
+  
   $filme = new Filme;
   $result = $filme->lista($app->get);
-
   Util::resSuccess($result);
 
 }
