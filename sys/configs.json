@@ -1,0 +1,16 @@
+{
+  "hide400": false,
+  "auth": {
+    "types": [
+      "none",
+      "tokenUser"
+    ],
+    "authType": "none",
+    "authSets": {
+      "tokenUser": {
+        "key": "boris-key",
+        "secret": "xyz"
+      }
+    }
+  }
+}

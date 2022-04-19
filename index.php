@@ -1,9 +1,11 @@
 <?php
 header('Access-Control-Allow-Origin: *');
-include 'init.php';
+include 'sys/init.php';
 
 $app = new Aplicacao;
 $reuter = new Reuter;
+
+$app->auth($reuter->resource);
 
 if ($reuter->hasRoutes()) {
 	include $reuter->resourceRoutes;
@@ -25,8 +27,9 @@ if (!function_exists($reuter->rota->funcao)) {
 	$app->response(400, 'Funcao['.$reuter->rota->funcao.'] inexistente no controlador');
 }
 
+
 $get = clone $app->get;
-foreach($reuter->get AS $var => $value){
+foreach($reuter->get as $var => $value){
 	$get->$var = $value;
 }
 

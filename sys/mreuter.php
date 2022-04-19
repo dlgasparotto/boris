@@ -7,7 +7,12 @@ Class Reuter {
 		$this->verbo 	= strtoupper($_SERVER["REQUEST_METHOD"]);
 		$this->prefixo = str_replace("index.php", "", $_SERVER['PHP_SELF']); 
 
-		$uriori	= str_replace($this->prefixo, '', $_SERVER["REQUEST_URI"]);
+		if ($this->prefixo == '/'){
+			$uriori = substr($_SERVER["REQUEST_URI"], 1);
+		} else {
+			$uriori	= str_replace($this->prefixo, '', $_SERVER["REQUEST_URI"]);
+		}
+		
 		$uri  = explode('?', $uriori)[0];
 		$uria = explode('/', $uri) ;
 		

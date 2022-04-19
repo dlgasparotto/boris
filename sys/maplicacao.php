@@ -2,33 +2,51 @@
 Class Aplicacao {
 
 	function __construct() {
-		$this->hide400 = false;
-		$this->verbo 	= strtoupper($_SERVER["REQUEST_METHOD"]);
-		$this->prefixo = str_replace("index.php", "", $_SERVER['PHP_SELF']); 
 
-		$uriori	= str_replace($this->prefixo, '', $_SERVER["REQUEST_URI"]);
-		$uri = explode('?', $uriori)[0];
-		$uria  	= explode('/', $uri) ;
-		
-		$this->rotasol = $uria[0];
-		$this->rotasolpars = array_slice($uria, 1);
-
+		$bodyreq = file_get_contents('php://input');
+		$configs = file_get_contents('sys/configs.json');
+		$this->configs = json_decode($configs);
+		//var_dump($this->configs);
+		//$this->hide400 = false;
 		$this->get 		= (object) $_GET;
 		$this->post 	= (object) $_POST;
-		$bodyreq = file_get_contents('php://input');
 		$this->body = json_decode($bodyreq);
 
 	}
 
+	function auth($resource){
 
-	
+		$authType = $this->configs->auth->authType;
+		$header = getallheaders();
 
+		switch ($authType) {
+
+			case 'none':
+				return true;
+
+			case 'tokenUser':
+				$tokenUser = $this->configs->auth->authSets->tokenUser;
+				if (!isSet($header[$tokenUser->key])) {
+					$this->response(400, 'Auth fail');
+				}
+				if ($header[$tokenUser->key] <> $tokenUser->secret) {
+					$this->response(400, 'Auth fail');
+				}
+				break;
+
+			case 'basicAuth':
+
+				break;
+
+		}
+
+	}
 
 	function response($status = 200, $info = ''){
 
 		$ret = new stdClass;
 		$bloqInfo = false;
-		$bloqInfo = ($status == 400 and $this->hide400);
+		$bloqInfo = ($status == 400 and $this->configs->hide400);
 		if ($info <> '' and !$bloqInfo) $ret->message = $info;
 		
 		http_response_code($status);
@@ -37,16 +55,6 @@ Class Aplicacao {
 
 	}
 
-	
-
-	
-
 }
-
-
-//*********************************************************************************** */
-
-
-
 
 ?>

@@ -13,7 +13,7 @@ function autoload($className) {
   if ($class == "aplicacao") {
   	$path = "sys/maplicacao.php";
   } else {
-    $path = "resources/".$class."s/m".$class."s.php";
+    $path = "models/m".$class.".php";
   }
 
   include $path;

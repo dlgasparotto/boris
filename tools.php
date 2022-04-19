@@ -1,0 +1,281 @@
+<?php
+
+$pars = decodeTerminal();
+
+if (isSet($pars["erro"])){
+  die($pars["erro"]);
+}
+
+if (!isSet($pars["comando"])){
+  help();
+  die();
+}
+
+switch($pars["comando"]) {
+  case "create-resource":
+    createResource($pars);
+    break;
+  case "create-model":
+    createModel($pars);
+    break;
+  default:
+    echo 'Comando invalido';
+}
+
+function decodeTerminal(){
+
+  global $argv;
+  
+  $params = [];
+  foreach($argv as $ind => $valor){
+    if ($ind == 0) continue;
+    if ($ind == 1){
+      $params["comando"] = $valor;
+    } else {
+      $infos = explode("=", $valor);
+
+      if (count($infos) <> 2 or $infos[0] == '' or $infos[1] == ''){
+        $params["erro"] = "Atributo invalido";
+        break;
+      } else {
+        $params[$infos[0]] = $infos[1];
+      }
+    }
+  }
+
+  return $params;
+
+}
+
+
+
+// Controllers
+function createResource($pars){
+
+  if (!isSet($pars["m"])) $pars["m"] = '';
+  if (!isSet($pars["t"])) $pars["t"] = '';
+
+  if (!isSet($pars["r"]) ){
+    $erro = "Resource não informado";
+  }
+
+  if ($pars["t"] == "crud" and $pars["m"] == '' ){
+    $erro = "Model não informado";
+  }
+  
+  if (isSet($erro)){
+    echo "ERRO: $erro";
+    return;
+  }
+
+
+  echo "Criando recurso solicitado: [" . $pars["r"] . "] \n";
+  
+  $folder = 'resources/' . $pars["r"];
+  $existsFolder = file_exists($folder);
+  if ($existsFolder){
+    echo "Recurso existente. Criando copia. \n";
+    rename($folder, $folder . '_' . time());
+  } 
+  
+  mkdir($folder);
+  echo "Diretorio resource criado... \n";
+
+  if ($pars["t"] == 'crud') {
+    $arqr = mountRoutesCrud($pars["r"]);
+    $arqc = mountControlCrud($pars["m"]);
+  } else {
+    $arqr = mountRoutes($pars["r"]);
+    $arqc = mountControl();
+  }
+
+  file_put_contents($folder . "/r" . $pars["r"] . ".php", $arqr );
+  echo "Route file ok... \n";
+  file_put_contents($folder . "/c" . $pars["r"] . ".php", $arqc );
+  echo "Control file  ok... \n";
+
+}
+
+function createModel($pars){
+
+  if (!isSet($pars["t"])) $pars["t"] = '';
+  if (!isSet($pars["r"])) $pars["r"] = '';
+
+  if (!isSet($pars["m"]) ){
+    $erro = "Model não informado";
+  }
+
+  if ($pars["t"] == "crud" and $pars["r"] == '' ){
+    $erro = "Resource não informado";
+  }
+  
+  if (isSet($erro)){
+    echo "ERRO: $erro";
+    return;
+  }
+
+  $fileModel = "models/m" . $pars["m"] . ".php";
+  if (file_exists($fileModel)){
+    echo "Model existente. \n";
+    rename($fileModel, $fileModel . '_' . time() . ".bkp");
+  } 
+
+  if ($pars["t"] == 'crud') {
+    $arqm = mountModelCrud($pars["m"], $pars["r"]);
+  } else {
+    $arqm = mountModel($$pars["m"]);
+  }
+  file_put_contents($fileModel, $arqm );
+  echo "Model file ok... \n";
+
+}
+
+function help(){
+  echo "\n\n\n";
+  echo "Boris Framework \n\n";
+  echo "$ php cmds.php create-resource r=resource [t=crud] \n\n";
+  echo "$ php cmds.php create-model m=classe [t=crud] \n";
+}
+
+// Functions mounts
+function mountControl(){
+
+  $code = "<?\n";
+  $code .= "header('Content-Type: application/json');\n\n";
+  $code .= "function get(\$app){\n\n";
+  $code .= "  \$result = \$app;\n";
+  $code .= "  Util::resSuccess(\$result);\n\n";
+  $code .= "}\n\n";
+  $code .= "?>";
+  return $code;
+
+}
+
+function mountControlCrud($model){
+
+  $modelCap = ucfirst($model);
+
+  $code = "<?\n";
+  $code .= "header('Content-Type: application/json');\n\n";
+  $code .= "function get(\$app){\n\n";
+  $code .= "  \$$model = new $modelCap;\n";
+  $code .= "  \$result = \$".$model."->get(\$app->get);\n";
+  $code .= "  Util::resSuccess(\$result);\n\n";
+  $code .= "}\n\n";
+  $code .= "function delete(\$app){\n\n";
+  $code .= "  \$$model = new $modelCap;\n";
+  $code .= "  \$id = \$app->get->id;\n";
+  $code .= "  \$result = \$".$model."->delete(\$id);\n";
+  $code .= "  Util::resSuccess(true);\n\n";
+  $code .= "}\n\n";
+  $code .= "function save(\$app){\n\n";
+  $code .= "  \$$model = new $modelCap;\n";
+  $code .= "  \$result = \$".$model."->save(\$app);\n";
+  $code .= "  Util::resSuccess(\$result);\n\n";
+  $code .= "}\n\n";
+  $code .= "?>";
+  return $code;
+
+}
+
+function mountRoutes($resource){
+  $code = "<?\n";
+  $code .= "\$reuter->get('$resource', [], 'get');\n";
+  $code .= "?>";
+  return $code;
+}
+
+function mountRoutesCrud($resource){
+  $code = "<?\n";
+  $code .= "\$reuter->get('$resource', [], 'get');\n";
+  $code .= "\$reuter->get('$resource' , ['id'],'get');\n";
+  $code .= "\$reuter->post('$resource', [], 'save' );\n" ;
+  $code .= "\$reuter->delete('$resource', ['id'], 'delete');\n";
+  $code .= "\$reuter->put('$resource' , [], 'save');\n";
+  $code .= "?>";
+  return $code;
+}
+
+function mountModel($model){
+
+  $nameCap = ucfirst($model);
+
+  $code = "<?\n\n";
+  $code .= "Class $nameCap {\n\n";
+  $code .= "  function __construct(){\n\n";
+  $code .= "    \$this->db = Base::db1();\n\n";
+  $code .= "  }\n\n";
+  $code .= "  function get() {\n\n";
+	$code .= "  	\$result = new stdClass;\n\n";
+	$code .= "  	return \$result;\n\n";
+	$code .= "  }\n\n";
+	$code .= " }\n";
+  $code .= " ?>";
+
+  return $code;
+}
+
+function mountModelCrud($model, $resource){
+
+  $nameCap = ucfirst($model);
+
+  $code = "<?\n\n";
+  $code .= "Class $nameCap {\n\n";
+  $code .= "  function __construct(){\n\n";
+  $code .= "    \$this->db = Base::db1();\n";
+  $code .= "    \$this->resource = '$resource';\n\n";
+  $code .= "  }\n\n";
+  $code .= "  function get(\$get) {\n";
+	$code .= "  	\$afiltros = array();\n";
+	$code .= "  	if (\$get->id <> '') array_push(\$afiltros, \" id = '\".\$get->id.\"' \");\n";
+	$code .= "  	if (count(\$afiltros) > 0){\n";
+	$code .= "  		\$filtros = ' where ' . implode(' and ', \$afiltros);\n";
+	$code .= "  	} else {\n";
+	$code .= "  		\$filtros = '';\n";
+	$code .= "  	}\n";
+	$code .= "  	\$sql = \"select * from \$this->resource \$filtros\";\n";
+	$code .= "  	\$rs = \$this->db->query(\$sql);\n";
+	$code .= "  	\$result = array();\n";
+	$code .= "  	while (\$item = \$rs->fetchObject()){\n";
+	$code .= "  		array_push(\$result, \$item);\n";
+	$code .= "  	}\n";
+  $code .= "  \n";
+	$code .= "  	return \$result;\n";
+	$code .= "  }\n\n";
+  $code .= "  function delete(\$id){\n";
+	$code .= "  	\$sql = \"delete from \$this->resource where id = '\$id'\";\n";
+	$code .= "  	\$rs = \$this->db->query(\$sql);\n";
+	$code .= "  	return true;\n";
+	$code .= "  }\n\n";
+  $code .= "  function save(\$app){\n";
+	$code .= "  	\$item = \$app->body;\n";
+	$code .= "  	if (\$item->id <> ''){\n";
+	$code .= "  		\$sql = \"update \$this->resource set\n";
+	$code .= "  			campo1 = :campo1,\n";
+	$code .= "  			campo2 = :campo2\n";
+	$code .= "  			where id = '\".\$item->id.\"'\";\n";
+	$code .= "  	} else {\n";
+	$code .= "  		\$sql = \"insert into \$this->resource (campo1, campo2)\n";
+	$code .= "  			values (:campo1, :campo2)\";\n";
+	$code .= "  	}\n";
+	$code .= "  	\$rs = \$this->db->prepare(\$sql);\n";
+	$code .= "  	\$rs->bindValue(':campo1',\$item->campo1);\n";
+	$code .= "  	\$rs->bindValue(':campo2',\$item->campo2);\n";
+	$code .= "  	\$rs->execute();\n";
+	$code .= "  	\n";
+	$code .= "  	if (\$item->id == ''){\n";
+	$code .= "  		\$sql = \"select id from \$this->resource order by id desc limit 1\";\n";
+	$code .= "  		\$rs = \$this->db->query(\$sql);\n";
+	$code .= "  		\$ultimo = \$rs->fetchObject();\n";
+	$code .= "  		\$item->id = \$ultimo->id;\n";
+	$code .= "  	}\n";
+  $code .= "    \n";
+	$code .= "  	return \$item;\n";
+	$code .= "  }\n";
+	$code .= " }\n";
+  $code .= " ?>";
+
+  return $code;
+}
+
+?>

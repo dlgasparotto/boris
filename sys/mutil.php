@@ -7,6 +7,7 @@ Class Util {
   
   static function resSuccess($data){
     echo json_encode($data);
+    die();
   }
 	
   static function resInvalidReq($message){
@@ -14,6 +15,7 @@ Class Util {
     $ret->message = $message;
     http_response_code(400);
     echo json_encode($ret);
+    die();
   }
 
 	static function trataApo($string){
