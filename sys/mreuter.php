@@ -51,23 +51,23 @@ Class Reuter {
 
 	}
 
-  function delete($rota, $pars, $funcao){
-		$route = new Rota('DELETE', $rota, $pars, $funcao);
+  function delete($rota, $funcao){
+		$route = new Rota('DELETE', $rota, $funcao);
 		$this->registerRoute($route);
 	}
 
-	function put($rota, $pars, $funcao){
-		$route = new Rota('PUT', $rota, $pars, $funcao);
+	function put($rota, $funcao){
+		$route = new Rota('PUT', $rota, $funcao);
 		$this->registerRoute($route);
 	}
 
-	function get($rota, $pars, $funcao){
-		$route = new Rota('GET', $rota, $pars, $funcao);
+	function get($rota, $funcao){
+		$route = new Rota('GET', $rota, $funcao);
 		$this->registerRoute($route);
 	}
 
-	function post($rota, $pars, $funcao){
-		$route = new Rota('POST', $rota, $pars, $funcao);
+	function post($rota, $funcao){
+		$route = new Rota('POST', $rota, $funcao);
 		$this->registerRoute($route);
 	}
 
@@ -80,11 +80,16 @@ Class Reuter {
 
 Class Rota {
 
-	function __construct($verbo, $rota, $pars, $funcao){
+	function __construct($verbo, $rota, $funcao){
 
-		$this->name = $verbo . $rota . count($pars);
+		$rota = str_replace(':', '', $rota);
+		$compRota = explode("/", $rota);
+		$resource = $compRota[0];
+		$pars = array_slice($compRota, 1);
+		
+		$this->name = $verbo . $resource . count($pars);
 		$this->verbo = $verbo;
-		$this->rota = $rota;
+		$this->rota = $resource;
 		$this->pars = $pars;
 		$this->funcao = $funcao;
 

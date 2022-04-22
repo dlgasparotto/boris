@@ -110,31 +110,32 @@ function createModel($pars){
   }
   
   if (isSet($erro)){
-    echo "ERRO: $erro";
+    echo "\033[31mERRO: $erro\033[0m";
     return;
   }
 
   $fileModel = "models/m" . $pars["m"] . ".php";
   if (file_exists($fileModel)){
-    echo "Model existente. \n";
+    echo "\033[33mModel existente.\033[0m \n";
     rename($fileModel, $fileModel . '_' . time() . ".bkp");
   } 
 
   if ($pars["t"] == 'crud') {
     $arqm = mountModelCrud($pars["m"], $pars["r"]);
   } else {
-    $arqm = mountModel($$pars["m"]);
+    $arqm = mountModel($pars["m"]);
   }
   file_put_contents($fileModel, $arqm );
-  echo "Model file ok... \n";
+  echo "\033[32mModel file ok... \033[0m \n";
 
 }
 
 function help(){
-  echo "\n\n\n";
-  echo "Boris Framework \n\n";
-  echo "$ php cmds.php create-resource r=resource [t=crud] \n\n";
-  echo "$ php cmds.php create-model m=classe [t=crud] \n";
+  echo "---------------------------------------------------\n";
+  echo "\033[33mBoris Framework \033[0m \n\n";
+  echo "$ \033[35mphp boris create-resource\033[0m r=resource [t=crud m=model] \n\n";
+  echo "$ \033[35mphp boris create-model\033[0m m=classe [t=crud r=resource] \n\n";
+  echo "---------------------------------------------------";
 }
 
 // Functions mounts
@@ -180,18 +181,18 @@ function mountControlCrud($model){
 
 function mountRoutes($resource){
   $code = "<?\n";
-  $code .= "\$reuter->get('$resource', [], 'get');\n";
+  $code .= "\$reuter->get('$resource', 'get');\n";
   $code .= "?>";
   return $code;
 }
 
 function mountRoutesCrud($resource){
   $code = "<?\n";
-  $code .= "\$reuter->get('$resource', [], 'get');\n";
-  $code .= "\$reuter->get('$resource' , ['id'],'get');\n";
-  $code .= "\$reuter->post('$resource', [], 'save' );\n" ;
-  $code .= "\$reuter->delete('$resource', ['id'], 'delete');\n";
-  $code .= "\$reuter->put('$resource' , [], 'save');\n";
+  $code .= "\$reuter->get('$resource', 'get');\n";
+  $code .= "\$reuter->get('$resource/:id', 'get');\n";
+  $code .= "\$reuter->post('$resource', 'save');\n" ;
+  $code .= "\$reuter->delete('$resource/:id', 'delete');\n";
+  $code .= "\$reuter->put('$resource', 'save');\n";
   $code .= "?>";
   return $code;
 }
