@@ -4,9 +4,9 @@ include 'sys/mutil.php';
 include 'sys/mbd.php';
 include 'sys/mreuter.php';
 
-spl_autoload_register('autoload');
+spl_autoload_register('modelPadrao');
 
-function autoload($className) {
+function modelPadrao($className) {
 
   $class = strtolower($className);
   

@@ -14,8 +14,6 @@ if ($reuter->hasRoutes()) {
 if (!$reuter->hasController()) {
 	$app->response(400,  'Controlador[c' . $app->rotasol.'] não encontrado');
 }
-//var_dump($reuter);
-//die();
 
 // Middewares
 
